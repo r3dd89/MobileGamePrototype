@@ -1,0 +1,4 @@
+repository "MobileGamePrototype/MobileGamePrototype@2475074637538@cloud"
+  path "/"
+    br "/main"
+    co "/main"
