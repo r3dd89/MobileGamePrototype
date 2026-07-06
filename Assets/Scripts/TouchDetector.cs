@@ -1,5 +1,7 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
 
 public class TouchDetector : MonoBehaviour
 {
@@ -15,52 +17,64 @@ public class TouchDetector : MonoBehaviour
     // Minimum movement distance needed to count as a swipe.
     public float swipeDistance = 100f;
 
+    private void OnEnable()
+    {
+        // Enables enhanced touch support for mobile touch input.
+        EnhancedTouchSupport.Enable();
+    }
+
+    private void OnDisable()
+    {
+        // Disables enhanced touch support when this script is turned off.
+        EnhancedTouchSupport.Disable();
+    }
+
     private void Update()
     {
-        // Stop the script if the text field was not assigned.
         if (touchResultText == null)
         {
             return;
         }
 
-        // Use real mobile touch input if available.
-        if (Input.touchCount > 0)
+        // Real mobile touch input.
+        if (UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches.Count > 0)
         {
-            Touch touch = Input.GetTouch(0);
+            var touch = UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches[0];
 
-            if (touch.phase == TouchPhase.Began)
+            if (touch.phase == UnityEngine.InputSystem.TouchPhase.Began)
             {
-                startPosition = touch.position;
+                startPosition = touch.screenPosition;
                 touchResultText.text = "Touch Started";
             }
 
-            if (touch.phase == TouchPhase.Ended)
+            if (touch.phase == UnityEngine.InputSystem.TouchPhase.Ended)
             {
-                endPosition = touch.position;
+                endPosition = touch.screenPosition;
                 CheckTapOrSwipe();
             }
         }
 
-        // Use mouse input for testing inside the Unity Editor.
-        if (Input.GetMouseButtonDown(0))
+        // Mouse input for Unity Editor testing.
+        if (Mouse.current != null)
         {
-            startPosition = Input.mousePosition;
-            touchResultText.text = "Mouse Touch Started";
-        }
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                startPosition = Mouse.current.position.ReadValue();
+                touchResultText.text = "Mouse Touch Started";
+            }
 
-        if (Input.GetMouseButtonUp(0))
-        {
-            endPosition = Input.mousePosition;
-            CheckTapOrSwipe();
+            if (Mouse.current.leftButton.wasReleasedThisFrame)
+            {
+                endPosition = Mouse.current.position.ReadValue();
+                CheckTapOrSwipe();
+            }
         }
     }
 
     private void CheckTapOrSwipe()
     {
-        // Measure how far the input moved.
         float distance = Vector2.Distance(startPosition, endPosition);
 
-        // If the input did not move far enough, it is a tap.
         if (distance < swipeDistance)
         {
             touchResultText.text = "Tap Detected\nPosition: " + endPosition;
@@ -73,10 +87,8 @@ public class TouchDetector : MonoBehaviour
 
     private void DetectSwipeDirection()
     {
-        // Get the direction of the swipe.
         Vector2 swipeDirection = endPosition - startPosition;
 
-        // Check whether the swipe was mostly horizontal or vertical.
         if (Mathf.Abs(swipeDirection.x) > Mathf.Abs(swipeDirection.y))
         {
             if (swipeDirection.x > 0)
