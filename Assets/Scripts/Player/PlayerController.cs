@@ -28,7 +28,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float tiltVisualAmount = 20f;
 
     [Header("UI Feedback")]
-    [SerializeField] private TMP_Text statusText;
+    [SerializeField] private GameUIManager gameUIManager;
 
     [Header("Visual Feedback")]
     [SerializeField] private Color feedbackColor = Color.yellow;
@@ -306,10 +306,10 @@ public class PlayerController : MonoBehaviour
 
     private void ShowStatus(string message)
     {
-        // Update the status text if it has been assigned.
-        if (statusText != null)
+        // Send player feedback to the UI manager.
+        if (gameUIManager != null)
         {
-            statusText.text = message;
+            gameUIManager.ShowStatusMessage(message);
         }
     }
 
