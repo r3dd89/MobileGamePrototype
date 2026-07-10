@@ -13,7 +13,7 @@ public class ObstacleSpawner : MonoBehaviour
     [SerializeField] private GameObject obstaclePrefab;
 
     [Header("Spawn Settings")]
-    [SerializeField] private float spawnRate = 1.2f;
+    [SerializeField] private float spawnRate = 1.5f;
     [SerializeField] private float spawnY = 5.5f;
 
     #endregion
