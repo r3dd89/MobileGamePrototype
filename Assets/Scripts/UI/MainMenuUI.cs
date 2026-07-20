@@ -20,7 +20,7 @@ public class MainMenuUI : MonoBehaviour
     [Header("Scene Settings")]
 
     // This stores the name of the gameplay scene that will be loaded.
-    [SerializeField] private string gameplaySceneName = "MobileRunnerPrototype";
+    [SerializeField] private string gameplaySceneName = "Main";
 
     #endregion
 

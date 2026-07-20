@@ -1674,7 +1674,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuUI
   mainMenuPanel: {fileID: 44974103}
   settingsPanel: {fileID: 793988547}
-  gameplaySceneName: MobileRunnerPrototype
+  gameplaySceneName: Main
 --- !u!1 &1253537231
 GameObject:
   m_ObjectHideFlags: 0
