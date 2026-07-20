@@ -3,10 +3,10 @@ using UnityEngine;
 
 /*
  * Script Name: GameUIManager
- * Purpose: Handles gameplay UI for the mobile runner prototype.
+ * Purpose: Handles the gameplay UI for the mobile runner prototype.
  * Responsibilities:
- * - Shows starting instructions.
- * - Hides instructions after a short delay.
+ * - Shows the starting instructions.
+ * - Hides the instructions after a short delay.
  * - Displays temporary status messages for player actions.
  */
 
@@ -15,15 +15,21 @@ public class GameUIManager : MonoBehaviour
     #region Inspector Settings
 
     [Header("UI Text References")]
+
+    // This text shows the controls when the game starts.
     [SerializeField] private TMP_Text instructionText;
 
-    [Header("UI Feedback")]
-    [SerializeField] private GameUIManager gameUIManager;
+    // This text shows short messages such as Ready, Jump, Left, or Right.
+    [SerializeField] private TMP_Text statusText;
 
     [Header("Instruction Settings")]
+
+    // This controls how long the instructions stay on the screen.
     [SerializeField] private float instructionHideDelay = 3f;
 
     [Header("Status Message Settings")]
+
+    // This controls how long a status message stays on the screen.
     [SerializeField] private float statusClearDelay = 1.5f;
 
     #endregion
@@ -32,6 +38,7 @@ public class GameUIManager : MonoBehaviour
 
     private void Start()
     {
+        // Show the starting UI when the gameplay scene begins.
         ShowStartingUI();
     }
 
@@ -41,22 +48,22 @@ public class GameUIManager : MonoBehaviour
 
     private void ShowStartingUI()
     {
-        // Show the instructions when the scene starts.
+        // Show the instruction text when the scene starts.
         if (instructionText != null)
         {
             instructionText.gameObject.SetActive(true);
         }
 
-        // Show the starting status message.
+        // Show a short starting message to the player.
         ShowStatusMessage("Ready");
 
-        // Hide instructions after the player has time to read them.
+        // Hide the instructions after the player has time to read them.
         Invoke(nameof(HideInstructions), instructionHideDelay);
     }
 
     private void HideInstructions()
     {
-        // Hide the instruction text to keep the screen clean.
+        // Hide the instruction text to keep the gameplay screen clean.
         if (instructionText != null)
         {
             instructionText.gameObject.SetActive(false);
@@ -67,18 +74,27 @@ public class GameUIManager : MonoBehaviour
 
     #region Status Methods
 
-    private void ShowStatus(string message)
+    public void ShowStatusMessage(string message)
     {
-        // Send player feedback to the UI manager.
-        if (gameUIManager != null)
+        // Stop if the status text was not assigned in the Inspector.
+        if (statusText == null)
         {
-            gameUIManager.ShowStatusMessage(message);
+            return;
         }
+
+        // Cancel the previous clear timer if another message appears.
+        CancelInvoke(nameof(ClearStatusMessage));
+
+        // Display the new message.
+        statusText.text = message;
+
+        // Clear the message after a short delay.
+        Invoke(nameof(ClearStatusMessage), statusClearDelay);
     }
 
     private void ClearStatusMessage()
     {
-        // Clear the status text so it does not stay on screen forever.
+        // Clear the status text so it does not remain on the screen.
         if (statusText != null)
         {
             statusText.text = "";
