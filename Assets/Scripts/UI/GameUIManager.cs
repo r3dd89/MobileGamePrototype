@@ -16,7 +16,9 @@ public class GameUIManager : MonoBehaviour
 
     [Header("UI Text References")]
     [SerializeField] private TMP_Text instructionText;
-    [SerializeField] private TMP_Text statusText;
+
+    [Header("UI Feedback")]
+    [SerializeField] private GameUIManager gameUIManager;
 
     [Header("Instruction Settings")]
     [SerializeField] private float instructionHideDelay = 3f;
@@ -65,18 +67,13 @@ public class GameUIManager : MonoBehaviour
 
     #region Status Methods
 
-    public void ShowStatusMessage(string message)
+    private void ShowStatus(string message)
     {
-        // Display the current player action or game message.
-        if (statusText != null)
+        // Send player feedback to the UI manager.
+        if (gameUIManager != null)
         {
-            statusText.gameObject.SetActive(true);
-            statusText.text = message;
+            gameUIManager.ShowStatusMessage(message);
         }
-
-        // Clear the message after a short delay.
-        CancelInvoke(nameof(ClearStatusMessage));
-        Invoke(nameof(ClearStatusMessage), statusClearDelay);
     }
 
     private void ClearStatusMessage()
