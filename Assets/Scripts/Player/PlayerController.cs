@@ -1,12 +1,17 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
 
 /*
  * Script Name: PlayerController
- * Purpose: Controls the player for the mobile runner prototype.
- * Features: Swipe lane movement, swipe jump, accelerometer tilt feedback, and visual feedback.
+ * Purpose: Controls swipe movement, jumping, accelerometer feedback,
+ *          and visual feedback for the mobile runner.
+ *
+ * Optimizations:
+ * 1. Caches frequently used component references.
+ * 2. Only performs lane movement while movement is necessary.
+ * 3. Only processes jump movement while the player is jumping.
+ * 4. Uses a timer instead of Invoke and CancelInvoke for color feedback.
  */
 
 public class PlayerController : MonoBehaviour
@@ -38,18 +43,25 @@ public class PlayerController : MonoBehaviour
 
     #region Private Variables
 
-    private float[] lanePositions = new float[] { -2f, 0f, 2f };
+    private readonly float[] lanePositions = { -2f, 0f, 2f };
+
     private int currentLane = 1;
+    private float targetLaneX;
 
     private Vector2 swipeStartPosition;
     private Vector2 swipeEndPosition;
 
-    private bool isJumping = false;
+    private bool isMovingBetweenLanes;
+    private bool isJumping;
+    private bool hasAccelerometer;
+    private bool isFlashing;
+
     private float baseY;
-    private float jumpTimer = 0f;
-
+    private float jumpTimer;
     private float smoothedTiltX;
+    private float flashTimer;
 
+    private Transform cachedTransform;
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
 
@@ -59,11 +71,13 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        // Enable mobile touch support for the New Input System.
+        // Enable mobile touch support.
         EnhancedTouchSupport.Enable();
 
-        // Enable the accelerometer if the device has one.
-        if (Accelerometer.current != null)
+        // Check for an accelerometer once when the script is enabled.
+        hasAccelerometer = Accelerometer.current != null;
+
+        if (hasAccelerometer)
         {
             InputSystem.EnableDevice(Accelerometer.current);
         }
@@ -71,17 +85,20 @@ public class PlayerController : MonoBehaviour
 
     private void OnDisable()
     {
-        // Disable enhanced touch support when this script is turned off.
         EnhancedTouchSupport.Disable();
+    }
+
+    private void Awake()
+    {
+        // Cache components that are used repeatedly.
+        cachedTransform = transform;
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void Start()
     {
-        // Save the player's starting Y position for the jump movement.
-        baseY = transform.position.y;
-
-        // Get the SpriteRenderer so the player can flash when input happens.
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        baseY = cachedTransform.position.y;
+        targetLaneX = lanePositions[currentLane];
 
         if (spriteRenderer != null)
         {
@@ -94,25 +111,43 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         HandleSwipeInput();
-        MoveToLane();
-        HandleJump();
-        HandleTiltFeedback();
+
+        if (isMovingBetweenLanes)
+        {
+            MoveToLane();
+        }
+
+        if (isJumping)
+        {
+            HandleJump();
+        }
+
+        if (hasAccelerometer)
+        {
+            HandleTiltFeedback();
+        }
+
+        if (isFlashing)
+        {
+            UpdateFlashTimer();
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Check if the player touches an obstacle.
-        if (other.CompareTag("Obstacle"))
+        if (!other.CompareTag("Obstacle"))
         {
-            if (isJumping)
-            {
-                ShowStatus("Jumped Over Obstacle");
-            }
-            else
-            {
-                ShowStatus("Hit Obstacle");
-                FlashPlayer();
-            }
+            return;
+        }
+
+        if (isJumping)
+        {
+            ShowStatus("Jumped Over Obstacle");
+        }
+        else
+        {
+            ShowStatus("Hit Obstacle");
+            FlashPlayer();
         }
     }
 
@@ -122,55 +157,60 @@ public class PlayerController : MonoBehaviour
 
     private void HandleSwipeInput()
     {
-        // Real mobile touch input.
-        if (UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches.Count > 0)
+        if (Touch.activeTouches.Count > 0)
         {
-            var touch = UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches[0];
+            Touch touch = Touch.activeTouches[0];
 
             if (touch.phase == UnityEngine.InputSystem.TouchPhase.Began)
             {
                 swipeStartPosition = touch.screenPosition;
             }
-
-            if (touch.phase == UnityEngine.InputSystem.TouchPhase.Ended)
+            else if (touch.phase ==
+                     UnityEngine.InputSystem.TouchPhase.Ended)
             {
                 swipeEndPosition = touch.screenPosition;
                 CheckSwipe();
             }
         }
 
-        // Mouse input for Unity Editor testing.
-        if (Mouse.current != null)
+        // Mouse controls remain available for Editor testing.
+        if (Mouse.current == null)
         {
-            if (Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                swipeStartPosition = Mouse.current.position.ReadValue();
-            }
+            return;
+        }
 
-            if (Mouse.current.leftButton.wasReleasedThisFrame)
-            {
-                swipeEndPosition = Mouse.current.position.ReadValue();
-                CheckSwipe();
-            }
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            swipeStartPosition = Mouse.current.position.ReadValue();
+        }
+
+        if (Mouse.current.leftButton.wasReleasedThisFrame)
+        {
+            swipeEndPosition = Mouse.current.position.ReadValue();
+            CheckSwipe();
         }
     }
 
     private void CheckSwipe()
     {
-        // Find the direction and distance of the swipe.
-        Vector2 swipeDirection = swipeEndPosition - swipeStartPosition;
+        Vector2 swipeDirection =
+            swipeEndPosition - swipeStartPosition;
 
-        // If the swipe was too short, count it as a tap.
-        if (swipeDirection.magnitude < minimumSwipeDistance)
+        // Compare squared distances to avoid an unnecessary square root.
+        float minimumSwipeDistanceSquared =
+            minimumSwipeDistance * minimumSwipeDistance;
+
+        if (swipeDirection.sqrMagnitude <
+            minimumSwipeDistanceSquared)
         {
             ShowStatus("Tap");
             return;
         }
 
-        // Check if the swipe was mostly horizontal or vertical.
-        if (Mathf.Abs(swipeDirection.x) > Mathf.Abs(swipeDirection.y))
+        if (Mathf.Abs(swipeDirection.x) >
+            Mathf.Abs(swipeDirection.y))
         {
-            if (swipeDirection.x > 0)
+            if (swipeDirection.x > 0f)
             {
                 MoveRight();
             }
@@ -179,16 +219,13 @@ public class PlayerController : MonoBehaviour
                 MoveLeft();
             }
         }
+        else if (swipeDirection.y > 0f)
+        {
+            Jump();
+        }
         else
         {
-            if (swipeDirection.y > 0)
-            {
-                Jump();
-            }
-            else
-            {
-                ShowStatus("Swipe Down");
-            }
+            ShowStatus("Swipe Down");
         }
     }
 
@@ -198,85 +235,93 @@ public class PlayerController : MonoBehaviour
 
     private void MoveLeft()
     {
-        // Move one lane left if the player is not already at the left edge.
-        if (currentLane > 0)
-        {
-            currentLane--;
-            ShowStatus("Swipe Left");
-            FlashPlayer();
-        }
-        else
+        if (currentLane <= 0)
         {
             ShowStatus("Left Edge");
+            return;
         }
+
+        currentLane--;
+        BeginLaneMovement();
+
+        ShowStatus("Swipe Left");
+        FlashPlayer();
     }
 
     private void MoveRight()
     {
-        // Move one lane right if the player is not already at the right edge.
-        if (currentLane < lanePositions.Length - 1)
-        {
-            currentLane++;
-            ShowStatus("Swipe Right");
-            FlashPlayer();
-        }
-        else
+        if (currentLane >= lanePositions.Length - 1)
         {
             ShowStatus("Right Edge");
+            return;
         }
+
+        currentLane++;
+        BeginLaneMovement();
+
+        ShowStatus("Swipe Right");
+        FlashPlayer();
+    }
+
+    private void BeginLaneMovement()
+    {
+        targetLaneX = lanePositions[currentLane];
+        isMovingBetweenLanes = true;
     }
 
     private void MoveToLane()
     {
-        // Move the player smoothly toward the selected lane.
-        Vector3 targetPosition = transform.position;
-        targetPosition.x = lanePositions[currentLane];
+        Vector3 currentPosition = cachedTransform.position;
 
-        transform.position = Vector3.MoveTowards(
-            transform.position,
-            targetPosition,
+        currentPosition.x = Mathf.MoveTowards(
+            currentPosition.x,
+            targetLaneX,
             laneMoveSpeed * Time.deltaTime
         );
+
+        cachedTransform.position = currentPosition;
+
+        if (Mathf.Approximately(currentPosition.x, targetLaneX))
+        {
+            isMovingBetweenLanes = false;
+        }
     }
 
     private void Jump()
     {
-        // Start a jump if the player is not already jumping.
-        if (!isJumping)
-        {
-            isJumping = true;
-            jumpTimer = 0f;
-            ShowStatus("Jump");
-            FlashPlayer();
-        }
-    }
-
-    private void HandleJump()
-    {
-        // Stop this method if the player is not jumping.
-        if (!isJumping)
+        if (isJumping)
         {
             return;
         }
 
-        // Use a sine wave to move the player up and back down smoothly.
+        isJumping = true;
+        jumpTimer = 0f;
+
+        ShowStatus("Jump");
+        FlashPlayer();
+    }
+
+    private void HandleJump()
+    {
         jumpTimer += Time.deltaTime * jumpSpeed;
 
-        float jumpOffset = Mathf.Sin(jumpTimer) * jumpHeight;
+        float jumpOffset =
+            Mathf.Sin(jumpTimer) * jumpHeight;
 
-        Vector3 newPosition = transform.position;
-        newPosition.y = baseY + jumpOffset;
-        transform.position = newPosition;
+        Vector3 currentPosition = cachedTransform.position;
+        currentPosition.y = baseY + jumpOffset;
+        cachedTransform.position = currentPosition;
 
-        // End the jump when the sine wave finishes.
-        if (jumpTimer >= Mathf.PI)
+        if (jumpTimer < Mathf.PI)
         {
-            isJumping = false;
-
-            Vector3 finalPosition = transform.position;
-            finalPosition.y = baseY;
-            transform.position = finalPosition;
+            return;
         }
+
+        isJumping = false;
+
+        currentPosition = cachedTransform.position;
+        currentPosition.y = baseY;
+        cachedTransform.position = currentPosition;
     }
 
     #endregion
@@ -285,19 +330,20 @@ public class PlayerController : MonoBehaviour
 
     private void HandleTiltFeedback()
     {
-        float targetTiltX = 0f;
+        float targetTiltX =
+            Accelerometer.current.acceleration.ReadValue().x;
 
-        // Read accelerometer input from the device.
-        if (Accelerometer.current != null)
-        {
-            targetTiltX = Accelerometer.current.acceleration.ReadValue().x;
-        }
+        smoothedTiltX = Mathf.Lerp(
+            smoothedTiltX,
+            targetTiltX,
+            tiltSmoothing * Time.deltaTime
+        );
 
-        // Smooth the accelerometer value so it does not feel shaky.
-        smoothedTiltX = Mathf.Lerp(smoothedTiltX, targetTiltX, tiltSmoothing * Time.deltaTime);
-
-        // Rotate the player slightly to show sensor feedback.
-        transform.rotation = Quaternion.Euler(0f, 0f, -smoothedTiltX * tiltVisualAmount);
+        cachedTransform.rotation = Quaternion.Euler(
+            0f,
+            0f,
+            -smoothedTiltX * tiltVisualAmount
+        );
     }
 
     #endregion
@@ -306,7 +352,6 @@ public class PlayerController : MonoBehaviour
 
     private void ShowStatus(string message)
     {
-        // Send player feedback to the UI manager.
         if (gameUIManager != null)
         {
             gameUIManager.ShowStatusMessage(message);
@@ -315,22 +360,28 @@ public class PlayerController : MonoBehaviour
 
     private void FlashPlayer()
     {
-        // Flash the player color for touch feedback.
-        if (spriteRenderer != null)
+        if (spriteRenderer == null)
         {
-            spriteRenderer.color = feedbackColor;
-            CancelInvoke(nameof(ResetColor));
-            Invoke(nameof(ResetColor), feedbackTime);
+            return;
         }
+
+        spriteRenderer.color = feedbackColor;
+
+        flashTimer = feedbackTime;
+        isFlashing = true;
     }
 
-    private void ResetColor()
+    private void UpdateFlashTimer()
     {
-        // Return the player to the original color.
-        if (spriteRenderer != null)
+        flashTimer -= Time.deltaTime;
+
+        if (flashTimer > 0f)
         {
-            spriteRenderer.color = originalColor;
+            return;
         }
+
+        spriteRenderer.color = originalColor;
+        isFlashing = false;
     }
 
     #endregion
