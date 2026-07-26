@@ -2,33 +2,59 @@ using UnityEngine;
 
 /*
  * Script Name: ObstacleMovement
- * Purpose: Moves obstacles downward and destroys them after they leave the screen.
+ * Purpose: Stores and controls one pooled obstacle.
+ * Optimization: This script no longer uses its own Update method.
  */
 
 public class ObstacleMovement : MonoBehaviour
 {
-    #region Inspector Settings
+    #region Private Variables
 
-    [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 3.5f;
-
-    [Header("Destroy Settings")]
-    [SerializeField] private float destroyY = -6f;
+    // Cached Transform reference so Unity does not repeatedly access transform.
+    private Transform cachedTransform;
 
     #endregion
 
     #region Unity Methods
 
-    private void Update()
+    private void Awake()
+    {
+        // Save the Transform reference when the obstacle is first created.
+        cachedTransform = transform;
+    }
+
+    #endregion
+
+    #region Pool Methods
+
+    public void ActivateObstacle(Vector3 spawnPosition)
+    {
+        // Place the obstacle in its selected lane.
+        cachedTransform.position = spawnPosition;
+
+        // Turn the pooled obstacle back on.
+        gameObject.SetActive(true);
+    }
+
+    public void MoveObstacle(float moveSpeed, float deltaTime)
     {
         // Move the obstacle downward.
-        transform.Translate(Vector3.down * moveSpeed * Time.deltaTime);
+        cachedTransform.Translate(
+            Vector3.down * moveSpeed * deltaTime,
+            Space.World
+        );
+    }
 
-        // Destroy the obstacle after it leaves the screen.
-        if (transform.position.y <= destroyY)
-        {
-            Destroy(gameObject);
-        }
+    public bool HasPassedDestroyPoint(float destroyY)
+    {
+        // Return true after the obstacle moves below the screen.
+        return cachedTransform.position.y <= destroyY;
+    }
+
+    public void DeactivateObstacle()
+    {
+        // Turn the obstacle off instead of destroying it.
+        gameObject.SetActive(false);
     }
 
     #endregion
