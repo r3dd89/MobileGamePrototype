@@ -76,17 +76,17 @@ The prototype includes an FPS counter on screen. The game uses simple 2D sprites
 
 
 
-Platform: Android  
+Platform: Android
 
-Orientation: Portrait  
+Orientation: Portrait
 
-Unity Version: Unity 6  
+Unity Version: Unity 6
 
-Input System: Unity New Input System  
+Input System: Unity New Input System
 
-Minimum Android Version: Android 8.0 or higher  
+Minimum Android Version: Android 8.0 or higher
 
-Main Scene: MobileRunnerPrototype  
+Main Scene: MobileRunnerPrototype
 
 
 
@@ -151,4 +151,164 @@ The prototype was tested using the Unity Device Simulator for screen layout and 
 \- GameUIManager.cs handles instruction text and temporary status messages.
 
 \- FPSCounter.cs displays the current FPS.
+
+
+
+\## Week 4 Optimization Documentation
+
+
+
+\### GitHub Repository
+
+https://github.com/r3dd89/MobileGamePrototype.git
+
+
+
+\### Baseline Performance
+
+
+
+\- Device: Android Phone
+
+\- FPS: 17.4
+
+\- Frame Time: 57.4 ms
+
+\- Batches: 7
+
+\- SetPass Calls: 6
+
+
+
+\### Optimizations Implemented
+
+
+
+\#### 1. Object Pooling
+
+
+
+\*\*Issue:\*\* Obstacles were constantly instantiated and destroyed.
+
+
+
+\*\*Solution:\*\* Implemented an object pooling system to reuse existing obstacles.
+
+
+
+\*\*Implementation:\*\* Modified the ObstacleSpawner to recycle inactive obstacles instead of creating new GameObjects.
+
+
+
+\*\*Result:\*\* Reduced CPU workload and improved overall frame rate.
+
+
+
+\*\*Files Changed:\*\*
+
+
+
+\- ObstacleSpawner.cs
+
+\- ObstacleMovement.cs
+
+
+
+\---
+
+
+
+\#### 2. Centralized Obstacle Processing
+
+
+
+\*\*Issue:\*\* Every obstacle executed its own Update() function.
+
+
+
+\*\*Solution:\*\* Reduced unnecessary Update() processing.
+
+
+
+\*\*Implementation:\*\* Simplified obstacle behavior and removed redundant per-object work.
+
+
+
+\*\*Result:\*\* Lower scripting overhead and more stable performance.
+
+
+
+\*\*Files Changed:\*\*
+
+
+
+\- ObstacleMovement.cs
+
+\- ObstacleSpawner.cs
+
+
+
+\---
+
+
+
+\#### 3. PlayerController Optimization
+
+
+
+\*\*Issue:\*\* The PlayerController performed unnecessary work each frame and relied on Invoke().
+
+
+
+\*\*Solution:\*\* Cached references and simplified runtime logic.
+
+
+
+\*\*Implementation:\*\* Replaced Invoke() with timer-based logic and reduced repeated processing.
+
+
+
+\*\*Result:\*\* Lower CPU usage and smoother gameplay.
+
+
+
+\*\*Files Changed:\*\*
+
+
+
+\- PlayerController.cs
+
+
+
+\### Performance Comparison
+
+
+
+| Metric | Before | After | Improvement |
+
+|--------|--------|-------|-------------|
+
+| FPS | 17.4 | 43.3 | +149% |
+
+| Frame Time | 57.4 ms | 23.1 ms | -59.8% |
+
+| Batches | 7 | 6 | -14% |
+
+| SetPass Calls | 6 | 4 | -33% |
+
+| Triangles | 123 | 25 | -80% |
+
+| Vertices | 247 | 51 | -79% |
+
+
+
+\### Remaining Issues
+
+
+
+\- Performance still fluctuates with a large number of active obstacles.
+
+\- Additional sprite atlasing and batching could further improve rendering performance.
+
+\- More optimization would be needed to consistently reach 60 FPS on lower-end mobile devices.
 
