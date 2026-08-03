@@ -41,6 +41,12 @@ public class MainMenuUI : MonoBehaviour
 
     public void PlayGame()
     {
+        // Record that the player started a gameplay session.
+        if (GameAnalyticsManager.Instance != null)
+        {
+            GameAnalyticsManager.Instance.TrackGameStarted();
+        }
+
         // Loads the gameplay scene when the Play button is pressed.
         SceneManager.LoadScene(gameplaySceneName);
     }
