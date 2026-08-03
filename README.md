@@ -2,313 +2,427 @@
 
 
 
-\## Project Description
+\## Project Overview
 
 
 
-Mobile Runner Prototype is a 2D mobile lane runner created in Unity 6. The player moves between lanes to avoid falling obstacles. The prototype focuses on mobile touch controls, sensor feedback, readable mobile UI, and Android tablet testing.
+Mobile Runner Prototype is a 2D endless runner developed in Unity 6 as part of a Mobile Game Development course. Throughout the semester, the project has gradually evolved from a simple touch input demonstration into a mobile prototype featuring swipe controls, sensor integration, responsive user interfaces, performance optimization, and Unity Analytics.
 
 
 
-This project was created for Week 2 of my mobile game development course. The goal was to make a playable mobile prototype that demonstrates advanced touch controls, sensor integration, mobile-appropriate design, and physical device testing.
+The project is being developed following professional game development practices, including GitHub version control, documented optimization, and organized project structure.
 
 
 
-\## Control Scheme
+\---
 
 
 
-The game is designed for portrait orientation and simple mobile play.
+\# Unity Version
 
 
 
-\- Swipe left to move one lane left.
+Unity 6
 
-\- Swipe right to move one lane right.
 
-\- Swipe up to jump.
 
-\- Tap input displays feedback.
+\---
 
-\- Tilt the tablet to make the player lean.
 
-\- Status text gives visual feedback for player actions.
 
+\# Platform
 
 
-\## Mobile Features
 
+Android
 
 
-\### Advanced Touch Controls
 
+\---
 
 
-The prototype uses swipe detection through Unity's New Input System and Enhanced Touch support. Swipes are used for lane changes and jumping. The game also includes visual feedback through status text and player color changes.
 
+\# Project Features
 
 
-\### Sensor Integration
 
+\- Three-lane endless runner gameplay
 
+\- Swipe left and right lane switching
 
-The prototype uses accelerometer input to make the player visually lean when the tablet is tilted. The accelerometer value is smoothed using Mathf.Lerp so the sensor feedback feels more stable and less shaky.
+\- Swipe up to jump
 
+\- Accelerometer tilt feedback
 
+\- Obstacle spawning
 
-\### Mobile-Appropriate Design
+\- Object pooling
 
+\- Responsive UI
 
+\- Main Menu
 
-The game is locked to portrait orientation. The controls use large swipe gestures instead of small buttons, which makes the game easier to play on a mobile device. The UI was adjusted after simulator testing so the instruction text, status text, and FPS counter are easier to read on a phone-sized screen.
+\- Settings Panel
 
+\- In-game HUD
 
+\- Performance optimization
 
-\### Performance Documentation
+\- Unity Analytics
 
 
 
-The prototype includes an FPS counter on screen. The game uses simple 2D sprites, basic obstacle spawning, and lightweight scripts to help maintain stable performance on mobile hardware.
+\---
 
 
 
-\## Build Instructions
+\# Controls
 
 
 
-Platform: Android
+| Action | Input |
 
-Orientation: Portrait
+|---------|-------|
 
-Unity Version: Unity 6
+| Move Left | Swipe Left |
 
-Input System: Unity New Input System
+| Move Right | Swipe Right |
 
-Minimum Android Version: Android 8.0 or higher
+| Jump | Swipe Up |
 
-Main Scene: MobileRunnerPrototype
+| Open Settings | Settings Button |
 
+| Start Game | Play Button |
 
 
-To build the project:
 
+\---
 
 
-1\. Open the project in Unity 6.
 
-2\. Go to File > Build Settings.
+\# Week 1 - Mobile Setup
 
-3\. Select Android.
 
-4\. Make sure the MobileRunnerPrototype scene is added to Scenes In Build.
 
-5\. Make sure MobileRunnerPrototype is the first scene in the build list.
+\## Completed
 
-6\. Click Build or Build And Run.
 
-7\. Save the APK to a folder on the computer.
 
-8\. Install or run the APK on an Android phone or tablet.
+\- Configured Unity for Android development.
 
+\- Implemented touch input detection.
 
+\- Tested touch input using both the Unity Editor and a physical Android tablet.
 
-\## Device Testing Notes
+\- Connected the project to GitHub.
 
 
 
-The prototype was tested using the Unity Device Simulator for screen layout and UI readability. The project is intended to be tested on an Android tablet for real touch and accelerometer input. The biggest difference between editor testing and device testing is that swipe input can be tested with a mouse in the editor, but accelerometer input needs a physical device to judge how it actually feels.
+\---
 
 
 
-\## Known Issues and Limitations
+\# Week 2 - Prototype Development
 
 
 
-\- The game currently uses placeholder square sprites instead of final artwork.
+\## Gameplay Features
 
-\- The prototype does not have a score system yet.
 
-\- The prototype does not have a start menu or restart screen yet.
 
-\- Obstacles currently spawn randomly in lanes.
+\- Three lane movement
 
-\- A future improvement would be making obstacles react to the player’s current lane to create more intentional challenge.
+\- Swipe controls
 
-\- The accelerometer currently affects player lean instead of full movement to keep the prototype simple and readable.
+\- Jump mechanic
 
+\- Accelerometer integration
 
+\- Obstacle spawning
 
-\## Scripts
+\- Player feedback messages
 
+\- Mobile testing
 
 
-\- PlayerController.cs handles swipe input, lane movement, jumping, accelerometer lean, and player feedback.
 
-\- ObstacleSpawner.cs spawns obstacles in random lanes.
+\---
 
-\- ObstacleMovement.cs moves obstacles downward and destroys them after they leave the screen.
 
-\- GameUIManager.cs handles instruction text and temporary status messages.
 
-\- FPSCounter.cs displays the current FPS.
+\# Week 3 - Mobile UI System
 
 
 
-\## Week 4 Optimization Documentation
+\## UI Features
 
 
 
-\### GitHub Repository
+Implemented a responsive UI system consisting of:
+
+
+
+\- Main Menu
+
+\- Settings Panel
+
+\- Gameplay HUD
+
+
+
+\### Responsive Design
+
+
+
+The interface was tested at:
+
+
+
+\- 16:9
+
+\- 19.5:9
+
+\- 4:3
+
+
+
+Canvas Scaler was configured using:
+
+
+
+\- Scale With Screen Size
+
+\- Reference Resolution: 1080 x 1920
+
+\- Match Value: 0.5
+
+
+
+\### Accessibility
+
+
+
+Implemented:
+
+
+
+\- Text Scaling
+
+\- High Contrast Mode
+
+
+
+\---
+
+
+
+\# Week 4 - Optimization
+
+
+
+\## Optimizations
+
+
+
+\### Object Pooling
+
+
+
+Replaced repeated Instantiate() and Destroy() calls with reusable pooled obstacles.
+
+
+
+\### Centralized Obstacle Processing
+
+
+
+Reduced unnecessary Update() calls by simplifying obstacle behavior.
+
+
+
+\### Player Controller Improvements
+
+
+
+Optimized player processing by:
+
+
+
+\- Caching references
+
+\- Reducing unnecessary Update work
+
+\- Replacing Invoke() with timer-based feedback
+
+
+
+\---
+
+
+
+\## Performance Comparison
+
+
+
+| Metric | Before | After |
+
+|---------|--------|-------|
+
+| FPS | 17.4 | 43.3 |
+
+| Frame Time | 57.4 ms | 23.1 ms |
+
+| Batches | 7 | 6 |
+
+| SetPass | 6 | 4 |
+
+
+
+\---
+
+
+
+\# Week 5 - Unity Analytics
+
+
+
+\## Analytics Events
+
+
+
+Implemented Unity Analytics to record:
+
+
+
+\- game\_started
+
+\- settings\_opened
+
+\- lane\_changed
+
+\- player\_jumped
+
+\- obstacle\_hit
+
+
+
+\## Key Performance Indicators
+
+
+
+The analytics implementation measures:
+
+
+
+\- Gameplay sessions
+
+\- Lane changes
+
+\- Jump frequency
+
+\- Obstacle collisions
+
+\- Settings usage
+
+
+
+These metrics help evaluate player behavior and improve future gameplay balancing.
+
+
+
+\---
+
+
+
+\# Device Testing
+
+
+
+The project has been tested using:
+
+
+
+\- Unity Editor
+
+\- Android Tablet
+
+
+
+Testing included:
+
+
+
+\- Swipe controls
+
+\- Accelerometer
+
+\- UI interaction
+
+\- Analytics events
+
+\- Performance profiling
+
+
+
+\---
+
+
+
+\# Known Issues
+
+
+
+\- Placeholder art is still being used.
+
+\- Additional balancing is needed for obstacle difficulty.
+
+\- Analytics dashboard updates may be delayed.
+
+\- A complete Game Over system has not yet been implemented.
+
+
+
+\---
+
+
+
+\# Future Improvements
+
+
+
+Planned improvements include:
+
+
+
+\- Score system
+
+\- High score saving
+
+\- Coins
+
+\- Better graphics
+
+\- Audio
+
+\- Animations
+
+\- Increasing game speed
+
+\- Rewarded advertisements
+
+\- Leaderboards
+
+\- Game Over screen
+
+
+
+\---
+
+
+
+\# GitHub Repository
+
+
 
 https://github.com/r3dd89/MobileGamePrototype.git
-
-
-
-\### Baseline Performance
-
-
-
-\- Device: Android Phone
-
-\- FPS: 17.4
-
-\- Frame Time: 57.4 ms
-
-\- Batches: 7
-
-\- SetPass Calls: 6
-
-
-
-\### Optimizations Implemented
-
-
-
-\#### 1. Object Pooling
-
-
-
-\*\*Issue:\*\* Obstacles were constantly instantiated and destroyed.
-
-
-
-\*\*Solution:\*\* Implemented an object pooling system to reuse existing obstacles.
-
-
-
-\*\*Implementation:\*\* Modified the ObstacleSpawner to recycle inactive obstacles instead of creating new GameObjects.
-
-
-
-\*\*Result:\*\* Reduced CPU workload and improved overall frame rate.
-
-
-
-\*\*Files Changed:\*\*
-
-
-
-\- ObstacleSpawner.cs
-
-\- ObstacleMovement.cs
-
-
-
-\---
-
-
-
-\#### 2. Centralized Obstacle Processing
-
-
-
-\*\*Issue:\*\* Every obstacle executed its own Update() function.
-
-
-
-\*\*Solution:\*\* Reduced unnecessary Update() processing.
-
-
-
-\*\*Implementation:\*\* Simplified obstacle behavior and removed redundant per-object work.
-
-
-
-\*\*Result:\*\* Lower scripting overhead and more stable performance.
-
-
-
-\*\*Files Changed:\*\*
-
-
-
-\- ObstacleMovement.cs
-
-\- ObstacleSpawner.cs
-
-
-
-\---
-
-
-
-\#### 3. PlayerController Optimization
-
-
-
-\*\*Issue:\*\* The PlayerController performed unnecessary work each frame and relied on Invoke().
-
-
-
-\*\*Solution:\*\* Cached references and simplified runtime logic.
-
-
-
-\*\*Implementation:\*\* Replaced Invoke() with timer-based logic and reduced repeated processing.
-
-
-
-\*\*Result:\*\* Lower CPU usage and smoother gameplay.
-
-
-
-\*\*Files Changed:\*\*
-
-
-
-\- PlayerController.cs
-
-
-
-\### Performance Comparison
-
-
-
-| Metric | Before | After | Improvement |
-
-|--------|--------|-------|-------------|
-
-| FPS | 17.4 | 43.3 | +149% |
-
-| Frame Time | 57.4 ms | 23.1 ms | -59.8% |
-
-| Batches | 7 | 6 | -14% |
-
-| SetPass Calls | 6 | 4 | -33% |
-
-| Triangles | 123 | 25 | -80% |
-
-| Vertices | 247 | 51 | -79% |
-
-
-
-\### Remaining Issues
-
-
-
-\- Performance still fluctuates with a large number of active obstacles.
-
-\- Additional sprite atlasing and batching could further improve rendering performance.
-
-\- More optimization would be needed to consistently reach 60 FPS on lower-end mobile devices.
 
