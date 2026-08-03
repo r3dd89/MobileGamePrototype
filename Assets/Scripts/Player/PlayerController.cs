@@ -204,6 +204,12 @@ public class PlayerController : MonoBehaviour
         {
             ShowStatus("Hit Obstacle");
             FlashPlayer();
+
+            // Record that the player hit an obstacle.
+            if (GameAnalyticsManager.Instance != null)
+            {
+                GameAnalyticsManager.Instance.TrackObstacleHit();
+            }
         }
     }
 
@@ -320,6 +326,11 @@ public class PlayerController : MonoBehaviour
         currentLane--;
         BeginLaneMovement();
 
+        if (GameAnalyticsManager.Instance != null)
+        {
+            GameAnalyticsManager.Instance.TrackLaneChanged();
+        }
+
         ShowStatus("Swipe Left");
         FlashPlayer();
     }
@@ -336,6 +347,11 @@ public class PlayerController : MonoBehaviour
         // Change the target lane.
         currentLane++;
         BeginLaneMovement();
+
+        if (GameAnalyticsManager.Instance != null)
+        {
+            GameAnalyticsManager.Instance.TrackLaneChanged();
+        }
 
         ShowStatus("Swipe Right");
         FlashPlayer();
@@ -383,6 +399,12 @@ public class PlayerController : MonoBehaviour
         // Reset the jump values.
         isJumping = true;
         jumpTimer = 0f;
+
+
+        if (GameAnalyticsManager.Instance != null)
+        {
+            GameAnalyticsManager.Instance.TrackPlayerJumped();
+        }
 
         ShowStatus("Jump");
         FlashPlayer();
