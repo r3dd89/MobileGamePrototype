@@ -1,10 +1,12 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /*
  * Script Name: GameManager
- * Purpose: Controls lives, score, and the overall game state.
+ * Purpose: Controls player lives, score, game over behavior,
+ *          scene restarting, and returning to the main menu.
  */
 
 public class GameManager : MonoBehaviour
@@ -30,22 +32,35 @@ public class GameManager : MonoBehaviour
 
     [Header("Score Settings")]
 
-    // Number of score points earned every second.
+    // Number of points earned every second.
     [SerializeField] private float scorePerSecond = 10f;
 
     [Header("Score UI")]
 
-    // Text that displays the player's current score.
+    // Displays the score during gameplay.
     [SerializeField] private TMP_Text scoreText;
+
+    [Header("Game Over UI")]
+
+    // Panel displayed when the player loses all lives.
+    [SerializeField] private GameObject gameOverPanel;
+
+    // Displays the final score on the Game Over panel.
+    [SerializeField] private TMP_Text finalScoreText;
+
+    [Header("Scene Settings")]
+
+    // Exact name of the Main Menu scene.
+    [SerializeField] private string mainMenuSceneName = "Main Menu";
 
     #endregion
 
     #region Private Variables
 
-    // Stores the player's current number of lives.
+    // Stores the player's current lives.
     private int currentLives;
 
-    // Stores the player's current score.
+    // Stores the player's score as a float for smooth time-based scoring.
     private float currentScore;
 
     // Tracks whether the game has ended.
@@ -76,7 +91,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        // Prevent more than one GameManager from existing.
+        // Prevent duplicate GameManagers.
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -85,10 +100,19 @@ public class GameManager : MonoBehaviour
 
         Instance = this;
 
-        // Reset the game values.
+        // Make sure normal time is restored when restarting the scene.
+        Time.timeScale = 1f;
+
+        // Set starting values.
         currentLives = startingLives;
         currentScore = 0f;
         isGameOver = false;
+
+        // Hide the Game Over panel at the beginning.
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(false);
+        }
 
         UpdateLivesUI();
         UpdateScoreUI();
@@ -96,7 +120,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // Stop increasing score after the game ends.
+        // Stop score increases after Game Over.
         if (isGameOver)
         {
             return;
@@ -117,7 +141,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void LoseLife()
     {
-        // Do not remove lives after game over.
+        // Do nothing after Game Over or when no lives remain.
         if (isGameOver || currentLives <= 0)
         {
             return;
@@ -136,8 +160,8 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Adds a specific amount to the player's score.
-    /// This can be used later for coins or avoided obstacles.
+    /// Adds points to the player's score.
+    /// This can later be used for coin collection.
     /// </summary>
     public void AddScore(int amount)
     {
@@ -150,17 +174,43 @@ public class GameManager : MonoBehaviour
         UpdateScoreUI();
     }
 
+    /// <summary>
+    /// Restarts the current gameplay scene.
+    /// </summary>
+    public void RestartGame()
+    {
+        // Restore normal time before loading.
+        Time.timeScale = 1f;
+
+        SceneManager.LoadScene(
+            SceneManager.GetActiveScene().name
+        );
+    }
+
+    /// <summary>
+    /// Returns the player to the Main Menu.
+    /// </summary>
+    public void ReturnToMainMenu()
+    {
+        // Restore normal time before changing scenes.
+        Time.timeScale = 1f;
+
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+
     #endregion
 
     #region UI Methods
 
     private void UpdateLivesUI()
     {
+        // Stop if no heart images were assigned.
         if (heartImages == null)
         {
             return;
         }
 
+        // Show only the hearts matching the remaining lives.
         for (int i = 0; i < heartImages.Length; i++)
         {
             if (heartImages[i] == null)
@@ -186,12 +236,32 @@ public class GameManager : MonoBehaviour
 
     private void GameOver()
     {
+        // Prevent Game Over from running twice.
+        if (isGameOver)
+        {
+            return;
+        }
+
         isGameOver = true;
 
         Debug.Log("Game Over");
         Debug.Log("Final Score: " + CurrentScore);
 
-        // Game Over panel will be added next.
+        // Update the final score display.
+        if (finalScoreText != null)
+        {
+            finalScoreText.text =
+                "Final Score: " + CurrentScore;
+        }
+
+        // Display the Game Over panel.
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+        }
+
+        // Freeze gameplay while keeping UI buttons usable.
+        Time.timeScale = 0f;
     }
 
     #endregion
