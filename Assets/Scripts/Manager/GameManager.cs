@@ -1,10 +1,10 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /*
  * Script Name: GameManager
- * Purpose: Keeps track of the player's lives, updates the heart icons,
- *          and controls the overall game state.
+ * Purpose: Controls lives, score, and the overall game state.
  */
 
 public class GameManager : MonoBehaviour
@@ -28,12 +28,25 @@ public class GameManager : MonoBehaviour
     // Stores the three heart images displayed on the HUD.
     [SerializeField] private Image[] heartImages;
 
+    [Header("Score Settings")]
+
+    // Number of score points earned every second.
+    [SerializeField] private float scorePerSecond = 10f;
+
+    [Header("Score UI")]
+
+    // Text that displays the player's current score.
+    [SerializeField] private TMP_Text scoreText;
+
     #endregion
 
     #region Private Variables
 
     // Stores the player's current number of lives.
     private int currentLives;
+
+    // Stores the player's current score.
+    private float currentScore;
 
     // Tracks whether the game has ended.
     private bool isGameOver;
@@ -42,13 +55,16 @@ public class GameManager : MonoBehaviour
 
     #region Public Properties
 
-    // Allows other scripts to read the current number of lives.
     public int CurrentLives
     {
         get { return currentLives; }
     }
 
-    // Allows other scripts to check whether the game is over.
+    public int CurrentScore
+    {
+        get { return Mathf.FloorToInt(currentScore); }
+    }
+
     public bool IsGameOver
     {
         get { return isGameOver; }
@@ -69,14 +85,27 @@ public class GameManager : MonoBehaviour
 
         Instance = this;
 
-        // Give the player their starting number of lives.
+        // Reset the game values.
         currentLives = startingLives;
-
-        // Make sure the game begins in an active state.
+        currentScore = 0f;
         isGameOver = false;
 
-        // Display all available hearts.
         UpdateLivesUI();
+        UpdateScoreUI();
+    }
+
+    private void Update()
+    {
+        // Stop increasing score after the game ends.
+        if (isGameOver)
+        {
+            return;
+        }
+
+        // Increase score based on survival time.
+        currentScore += scorePerSecond * Time.deltaTime;
+
+        UpdateScoreUI();
     }
 
     #endregion
@@ -88,59 +117,66 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void LoseLife()
     {
-        // Do not remove lives after the game has ended.
-        if (isGameOver)
+        // Do not remove lives after game over.
+        if (isGameOver || currentLives <= 0)
         {
             return;
         }
 
-        // Prevent the life count from going below zero.
-        if (currentLives <= 0)
-        {
-            return;
-        }
-
-        // Remove one life.
         currentLives--;
 
-        // Update the hearts displayed on the HUD.
         UpdateLivesUI();
 
         Debug.Log("Lives Remaining: " + currentLives);
 
-        // End the game when no lives remain.
         if (currentLives <= 0)
         {
             GameOver();
         }
     }
 
+    /// <summary>
+    /// Adds a specific amount to the player's score.
+    /// This can be used later for coins or avoided obstacles.
+    /// </summary>
+    public void AddScore(int amount)
+    {
+        if (isGameOver)
+        {
+            return;
+        }
+
+        currentScore += amount;
+        UpdateScoreUI();
+    }
+
     #endregion
 
     #region UI Methods
 
-    /// <summary>
-    /// Shows or hides heart icons based on the current life count.
-    /// </summary>
     private void UpdateLivesUI()
     {
-        // Stop if the heart array has not been assigned.
         if (heartImages == null)
         {
             return;
         }
 
-        // Check every heart image.
         for (int i = 0; i < heartImages.Length; i++)
         {
-            // Skip any empty array slots.
             if (heartImages[i] == null)
             {
                 continue;
             }
 
-            // Show hearts that represent remaining lives.
             heartImages[i].gameObject.SetActive(i < currentLives);
+        }
+    }
+
+    private void UpdateScoreUI()
+    {
+        if (scoreText != null)
+        {
+            scoreText.text = CurrentScore.ToString();
         }
     }
 
@@ -148,16 +184,14 @@ public class GameManager : MonoBehaviour
 
     #region Game State Methods
 
-    /// <summary>
-    /// Ends the game when the player loses all lives.
-    /// </summary>
     private void GameOver()
     {
         isGameOver = true;
 
         Debug.Log("Game Over");
+        Debug.Log("Final Score: " + CurrentScore);
 
-        // We will connect the Game Over panel here next.
+        // Game Over panel will be added next.
     }
 
     #endregion
