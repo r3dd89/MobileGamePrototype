@@ -426,3 +426,115 @@ Planned improvements include:
 
 https://github.com/r3dd89/MobileGamePrototype.git
 
+
+
+
+
+\## Week 6: Polish \& Launch Preparation
+
+
+
+\### Polish Elements Added
+
+
+
+\#### 1. Animated Collectible Coins
+
+\- Added animated coin collectibles that spawn randomly across the three gameplay lanes.
+
+\- Coins move down the screen with the gameplay environment.
+
+\- Collecting a coin adds bonus points to the player's score.
+
+\- Coins use object pooling so they can be reused instead of constantly instantiated and destroyed.
+
+\- Performance impact was minimal during testing.
+
+
+
+\#### 2. Score Counter Animation
+
+\- Added a score pulse animation when the player collects a coin.
+
+\- The score briefly increases in size and smoothly returns to its normal scale.
+
+\- This provides immediate visual feedback when bonus points are earned.
+
+\- The animation uses a lightweight timer-based system and has minimal performance impact.
+
+
+
+\### Additional Gameplay Improvements
+
+\- Added a three-life system with heart icons.
+
+\- Added a Game Over screen with final score display.
+
+\- Added Restart and Main Menu buttons.
+
+\- Added animated coin spawning and collection.
+
+\- Improved HUD responsiveness for different mobile aspect ratios.
+
+\- Adjusted UI anchors and pivots to prevent HUD elements from being cut off on phones.
+
+
+
+\### Marketing Assets
+
+
+
+\#### App Icon
+
+\- Created a custom pixel-art app icon featuring the player character and road.
+
+\- Master icon imported into Unity.
+
+\- Default Android icon configured.
+
+\- Legacy Android icon sizes configured.
+
+\- Round Android icon sizes configured.
+
+
+
+\#### Screenshots
+
+\- Captured gameplay screenshots showing the player, obstacles, collectible coins, lives, and score.
+
+\- Captured the Game Over screen showing the final score and navigation buttons.
+
+\- Screenshots were tested using Android mobile device profiles.
+
+
+
+\### Pre-Launch Checklist Status
+
+\- Game builds without compilation errors.
+
+\- Android APK successfully created.
+
+\- Core gameplay systems are functional.
+
+\- Touch controls are functional.
+
+\- UI was tested across multiple mobile aspect ratios.
+
+\- Performance profiling was completed.
+
+\- Unity Analytics implementation from Week 5 remains functional.
+
+\- App icon and marketing screenshots are prepared.
+
+
+
+\### Known Issues for Launch
+
+\- Additional physical-device testing would be completed before a commercial release.
+
+\- Adaptive Android icons have not yet been configured with separate foreground and background layers.
+
+\- Additional audio and visual effects would be added before a commercial release.
+
+\- The current build is a course prototype and has not been submitted to the Google Play Store.
+
