@@ -61,7 +61,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private string mainMenuSceneName = "Main Menu";
 
     // Exact name of the gameplay scene.
-    [SerializeField] private string gameplaySceneName = "Main";
+    [SerializeField] private string gameplaySceneName = "Gameplay";
 
     #endregion
 
