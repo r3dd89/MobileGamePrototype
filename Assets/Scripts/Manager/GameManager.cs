@@ -324,8 +324,10 @@ public class GameManager : MonoBehaviour
 
         isGameOver = true;
 
-        Debug.Log("Game Over");
-        Debug.Log("Final Score: " + CurrentScore);
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayGameOverSound();
+        }
 
         // Update the final score display.
         if (finalScoreText != null)

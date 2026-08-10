@@ -3,8 +3,9 @@ using UnityEngine;
 
 /*
  * Script Name: CoinSpawner
- * Purpose: Creates a reusable pool of animated coin prefabs
- *          and spawns them in one of the three gameplay lanes.
+ * Purpose: Creates a reusable pool of animated coin prefabs,
+ *          spawns them in one of the three gameplay lanes,
+ *          and slightly increases coin frequency as difficulty rises.
  */
 
 public class CoinSpawner : MonoBehaviour
@@ -21,11 +22,19 @@ public class CoinSpawner : MonoBehaviour
 
     [Header("Spawn Settings")]
 
-    // Number of seconds between each coin spawn.
-    [SerializeField] private float spawnRate = 3f;
+    // Starting number of seconds between coin spawns.
+    [SerializeField] private float startingSpawnRate = 3f;
 
     // World-space Y position where coins appear.
     [SerializeField] private float spawnY = 3.5f;
+
+    [Header("Difficulty Settings")]
+
+    // Amount the coin spawn interval decreases per difficulty level.
+    [SerializeField] private float spawnRateDecreasePerLevel = 0.2f;
+
+    // Fastest allowed coin spawn interval.
+    [SerializeField] private float minimumSpawnRate = 2f;
 
     #endregion
 
@@ -41,12 +50,28 @@ public class CoinSpawner : MonoBehaviour
     // Counts time until the next coin spawn.
     private float spawnTimer;
 
+    // Current amount of time between coin spawns.
+    private float currentSpawnRate;
+
+    // Stores the last difficulty level used to update coin spawning.
+    private int lastDifficultyLevel = 1;
+
+    // Reference to the obstacle spawner so both systems share difficulty.
+    private ObstacleSpawner obstacleSpawner;
+
     #endregion
 
     #region Unity Methods
 
     private void Start()
     {
+        // Set the starting spawn interval.
+        currentSpawnRate = startingSpawnRate;
+
+        // Find the obstacle spawner once.
+        obstacleSpawner =
+            FindFirstObjectByType<ObstacleSpawner>();
+
         // Create all pooled coins when gameplay begins.
         CreateCoinPool();
     }
@@ -60,13 +85,18 @@ public class CoinSpawner : MonoBehaviour
             return;
         }
 
-        // Count time toward the next spawn.
+        // Check whether the game difficulty has increased.
+        UpdateDifficulty();
+
+        // Count time toward the next coin spawn.
         spawnTimer += Time.deltaTime;
 
-        if (spawnTimer >= spawnRate)
+        if (spawnTimer >= currentSpawnRate)
         {
             SpawnCoin();
-            spawnTimer = 0f;
+
+            // Preserve extra elapsed time.
+            spawnTimer -= currentSpawnRate;
         }
     }
 
@@ -98,7 +128,8 @@ public class CoinSpawner : MonoBehaviour
                 transform
             );
 
-            newCoin.name = "Pooled Coin " + (i + 1);
+            newCoin.name =
+                "Pooled Coin " + (i + 1);
 
             // Keep the coin inactive until it is needed.
             newCoin.SetActive(false);
@@ -133,35 +164,93 @@ public class CoinSpawner : MonoBehaviour
 
     private void SpawnCoin()
     {
-        GameObject availableCoin = GetAvailableCoin();
+        GameObject availableCoin =
+            GetAvailableCoin();
 
         if (availableCoin == null)
         {
-            Debug.LogWarning("Coin Spawner: No pooled coin is available.", this);
+            Debug.LogWarning(
+                "Coin Spawner: No pooled coin is available.",
+                this
+            );
+
             return;
         }
 
-        int randomLane = Random.Range(0, lanePositions.Length);
+        // Pick one of the three lanes.
+        int randomLane =
+            Random.Range(0, lanePositions.Length);
+
         Vector3 spawnPosition = new Vector3(
             lanePositions[randomLane],
             spawnY,
             0f
         );
 
-        // Call ActivateCoin directly on the collectible component
-        CoinCollectible collectible = availableCoin.GetComponent<CoinCollectible>();
+        // Get the collectible component.
+        CoinCollectible collectible =
+            availableCoin.GetComponent<CoinCollectible>();
+
         if (collectible != null)
         {
+            // Position and activate the pooled coin.
             collectible.ActivateCoin(spawnPosition);
         }
         else
         {
-            // Fallback if missing component
-            availableCoin.transform.position = spawnPosition;
+            // Fallback if the prefab is missing CoinCollectible.
+            availableCoin.transform.position =
+                spawnPosition;
+
             availableCoin.SetActive(true);
         }
 
-        Debug.Log("Coin spawned at: " + spawnPosition, availableCoin);
+        Debug.Log(
+            "Coin spawned at: " + spawnPosition,
+            availableCoin
+        );
+    }
+
+    #endregion
+
+    #region Difficulty Methods
+
+    private void UpdateDifficulty()
+    {
+        // Stop if the obstacle spawner could not be found.
+        if (obstacleSpawner == null)
+        {
+            return;
+        }
+
+        int currentDifficultyLevel =
+            obstacleSpawner.CurrentDifficultyLevel;
+
+        // Only update when a new difficulty level begins.
+        if (currentDifficultyLevel ==
+            lastDifficultyLevel)
+        {
+            return;
+        }
+
+        lastDifficultyLevel =
+            currentDifficultyLevel;
+
+        /*
+         * Make coins spawn slightly more frequently as
+         * difficulty increases.
+         */
+        currentSpawnRate = Mathf.Max(
+            startingSpawnRate -
+            ((currentDifficultyLevel - 1) *
+             spawnRateDecreasePerLevel),
+            minimumSpawnRate
+        );
+
+        Debug.Log(
+            "Coin Spawn Rate Updated: " +
+            currentSpawnRate
+        );
     }
 
     #endregion

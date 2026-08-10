@@ -4,12 +4,14 @@ using UnityEngine;
 /*
  * Script Name: ObstacleSpawner
  * Purpose: Creates a reusable obstacle pool, spawns obstacles,
- *          and moves all active obstacles from one Update method.
+ *          moves all active obstacles, and gradually increases
+ *          gameplay difficulty over time.
  *
  * Optimizations:
  * 1. Obstacles are created once and reused.
  * 2. Instantiate and Destroy are not used during normal gameplay.
  * 3. Obstacle movement is handled by one centralized Update method.
+ * 4. Difficulty values are updated only when a new difficulty level begins.
  */
 
 public class ObstacleSpawner : MonoBehaviour
@@ -26,7 +28,7 @@ public class ObstacleSpawner : MonoBehaviour
 
     [Header("Spawn Settings")]
 
-    // Amount of time between obstacle spawns.
+    // Starting amount of time between obstacle spawns.
     [SerializeField] private float spawnRate = 1.5f;
 
     // Vertical position where obstacles appear.
@@ -34,11 +36,31 @@ public class ObstacleSpawner : MonoBehaviour
 
     [Header("Movement Settings")]
 
-    // Speed applied to every active obstacle.
+    // Starting speed applied to every active obstacle.
     [SerializeField] private float obstacleMoveSpeed = 3.5f;
 
     // Obstacles are returned to the pool below this position.
     [SerializeField] private float returnToPoolY = -6f;
+
+    [Header("Difficulty Settings")]
+
+    // Number of seconds before the difficulty increases.
+    [SerializeField] private float difficultyIncreaseInterval = 20f;
+
+    // Amount added to obstacle speed each difficulty level.
+    [SerializeField] private float speedIncreasePerLevel = 0.5f;
+
+    // Amount removed from the spawn interval each difficulty level.
+    [SerializeField] private float spawnRateDecreasePerLevel = 0.1f;
+
+    // Fastest allowed obstacle spawn interval.
+    [SerializeField] private float minimumSpawnRate = 1.1f;
+
+    // Maximum obstacle movement speed.
+    [SerializeField] private float maximumObstacleSpeed = 5.5f;
+
+    // Highest difficulty level the game can reach.
+    [SerializeField] private int maximumDifficultyLevel = 5;
 
     #endregion
 
@@ -55,7 +77,30 @@ public class ObstacleSpawner : MonoBehaviour
     private readonly List<ObstacleMovement> activeObstacles =
         new List<ObstacleMovement>();
 
+    // Counts time until the next obstacle spawn.
     private float spawnTimer;
+
+    // Counts time until the next difficulty increase.
+    private float difficultyTimer;
+
+    // Current difficulty level.
+    private int currentDifficultyLevel = 1;
+
+    #endregion
+
+    #region Public Properties
+
+    // Allows other scripts to read the current difficulty level later.
+    public int CurrentDifficultyLevel
+    {
+        get { return currentDifficultyLevel; }
+    }
+
+    // Allows other systems, such as coins, to match obstacle speed later.
+    public float CurrentObstacleSpeed
+    {
+        get { return obstacleMoveSpeed; }
+    }
 
     #endregion
 
@@ -63,12 +108,26 @@ public class ObstacleSpawner : MonoBehaviour
 
     private void Awake()
     {
+        // Create all reusable obstacles before gameplay begins.
         CreateObstaclePool();
     }
 
     private void Update()
     {
+        // Stop processing after Game Over.
+        if (GameManager.Instance != null &&
+            GameManager.Instance.IsGameOver)
+        {
+            return;
+        }
+
+        // Check whether the difficulty should increase.
+        UpdateDifficulty();
+
+        // Handle obstacle spawning.
         UpdateSpawnTimer();
+
+        // Move all active obstacles.
         MoveActiveObstacles();
     }
 
@@ -115,7 +174,7 @@ public class ObstacleSpawner : MonoBehaviour
                 continue;
             }
 
-            // Keep the pooled objects organized under the spawner.
+            // Keep pooled objects organized under the spawner.
             obstacleObject.name = $"Pooled Obstacle {i + 1}";
 
             // Hide the obstacle until the spawner needs it.
@@ -154,27 +213,29 @@ public class ObstacleSpawner : MonoBehaviour
             return;
         }
 
+        // Count time toward the next spawn.
         spawnTimer += Time.deltaTime;
 
         if (spawnTimer >= spawnRate)
         {
             SpawnObstacle();
 
-            // Preserve extra elapsed time instead of always resetting to zero.
+            // Preserve extra elapsed time.
             spawnTimer -= spawnRate;
         }
     }
 
     private void SpawnObstacle()
     {
-        // Do not instantiate during gameplay if every pooled obstacle is active.
+        // Do not create extra objects if every pooled obstacle is active.
         if (availableObstacles.Count == 0)
         {
             return;
         }
 
         // Choose one of the three lanes.
-        int randomLane = Random.Range(0, lanePositions.Length);
+        int randomLane =
+            Random.Range(0, lanePositions.Length);
 
         Vector3 spawnPosition = new Vector3(
             lanePositions[randomLane],
@@ -183,7 +244,8 @@ public class ObstacleSpawner : MonoBehaviour
         );
 
         // Take an inactive obstacle from the pool.
-        ObstacleMovement obstacle = availableObstacles.Dequeue();
+        ObstacleMovement obstacle =
+            availableObstacles.Dequeue();
 
         // Position and display it.
         obstacle.ActivateObstacle(spawnPosition);
@@ -198,11 +260,13 @@ public class ObstacleSpawner : MonoBehaviour
 
     private void MoveActiveObstacles()
     {
-        // Move backward through the list because obstacles may be removed.
+        // Move backward because obstacles may be removed from the list.
         for (int i = activeObstacles.Count - 1; i >= 0; i--)
         {
-            ObstacleMovement obstacle = activeObstacles[i];
+            ObstacleMovement obstacle =
+                activeObstacles[i];
 
+            // Move the obstacle using the current difficulty speed.
             obstacle.MoveObstacle(
                 obstacleMoveSpeed,
                 Time.deltaTime
@@ -214,6 +278,58 @@ public class ObstacleSpawner : MonoBehaviour
                 ReturnObstacleToPool(obstacle, i);
             }
         }
+    }
+
+    #endregion
+
+    #region Difficulty Methods
+
+    private void UpdateDifficulty()
+    {
+        // Stop increasing difficulty after reaching the maximum level.
+        if (currentDifficultyLevel >= maximumDifficultyLevel)
+        {
+            return;
+        }
+
+        // Count survival time.
+        difficultyTimer += Time.deltaTime;
+
+        // Wait until enough time has passed.
+        if (difficultyTimer < difficultyIncreaseInterval)
+        {
+            return;
+        }
+
+        // Reset the timer for the next difficulty level.
+        difficultyTimer -= difficultyIncreaseInterval;
+
+        IncreaseDifficulty();
+    }
+
+    private void IncreaseDifficulty()
+    {
+        // Increase the difficulty level.
+        currentDifficultyLevel++;
+
+        // Increase obstacle movement speed.
+        obstacleMoveSpeed = Mathf.Min(
+            obstacleMoveSpeed + speedIncreasePerLevel,
+            maximumObstacleSpeed
+        );
+
+        // Reduce the time between obstacle spawns.
+        spawnRate = Mathf.Max(
+            spawnRate - spawnRateDecreasePerLevel,
+            minimumSpawnRate
+        );
+
+        // Display testing information in the Console.
+        Debug.Log(
+            "Difficulty Level: " + currentDifficultyLevel +
+            " | Obstacle Speed: " + obstacleMoveSpeed +
+            " | Spawn Rate: " + spawnRate
+        );
     }
 
     #endregion

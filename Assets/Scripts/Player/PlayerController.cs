@@ -209,6 +209,11 @@ public class PlayerController : MonoBehaviour
             GameManager.Instance.LoseLife();
         }
 
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayHitSound();
+        }
+
         ShowStatus("Hit Obstacle");
         FlashPlayer();
 
