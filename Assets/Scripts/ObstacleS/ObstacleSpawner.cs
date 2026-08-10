@@ -4,14 +4,15 @@ using UnityEngine;
 /*
  * Script Name: ObstacleSpawner
  * Purpose: Creates a reusable obstacle pool, spawns obstacles,
- *          moves all active obstacles, and gradually increases
- *          gameplay difficulty over time.
+ *          moves all active obstacles, gradually increases
+ *          gameplay difficulty, and prevents excessive lane repeats.
  *
  * Optimizations:
  * 1. Obstacles are created once and reused.
  * 2. Instantiate and Destroy are not used during normal gameplay.
  * 3. Obstacle movement is handled by one centralized Update method.
  * 4. Difficulty values are updated only when a new difficulty level begins.
+ * 5. Lane selection prevents the same lane from repeating too many times.
  */
 
 public class ObstacleSpawner : MonoBehaviour
@@ -41,6 +42,11 @@ public class ObstacleSpawner : MonoBehaviour
 
     // Obstacles are returned to the pool below this position.
     [SerializeField] private float returnToPoolY = -6f;
+
+    [Header("Lane Variety Settings")]
+
+    // Maximum number of times the same lane may be used in a row.
+    [SerializeField] private int maximumSameLaneSpawns = 2;
 
     [Header("Difficulty Settings")]
 
@@ -86,17 +92,23 @@ public class ObstacleSpawner : MonoBehaviour
     // Current difficulty level.
     private int currentDifficultyLevel = 1;
 
+    // Stores the previously selected lane.
+    private int lastSpawnedLane = -1;
+
+    // Counts how many times the same lane has been selected in a row.
+    private int sameLaneSpawnCount = 0;
+
     #endregion
 
     #region Public Properties
 
-    // Allows other scripts to read the current difficulty level later.
+    // Allows other scripts to read the current difficulty level.
     public int CurrentDifficultyLevel
     {
         get { return currentDifficultyLevel; }
     }
 
-    // Allows other systems, such as coins, to match obstacle speed later.
+    // Allows other systems, such as coins, to match obstacle speed.
     public float CurrentObstacleSpeed
     {
         get { return obstacleMoveSpeed; }
@@ -233,12 +245,11 @@ public class ObstacleSpawner : MonoBehaviour
             return;
         }
 
-        // Choose one of the three lanes.
-        int randomLane =
-            Random.Range(0, lanePositions.Length);
+        // Choose a lane using controlled randomness.
+        int selectedLane = ChooseSpawnLane();
 
         Vector3 spawnPosition = new Vector3(
-            lanePositions[randomLane],
+            lanePositions[selectedLane],
             spawnY,
             0f
         );
@@ -252,6 +263,41 @@ public class ObstacleSpawner : MonoBehaviour
 
         // Add it to the active movement list.
         activeObstacles.Add(obstacle);
+    }
+
+    private int ChooseSpawnLane()
+    {
+        // Choose a random lane first.
+        int selectedLane =
+            Random.Range(0, lanePositions.Length);
+
+        /*
+         * If the same lane has already been used the maximum
+         * allowed number of times, force a different lane.
+         */
+        if (selectedLane == lastSpawnedLane &&
+            sameLaneSpawnCount >= maximumSameLaneSpawns)
+        {
+            do
+            {
+                selectedLane =
+                    Random.Range(0, lanePositions.Length);
+            }
+            while (selectedLane == lastSpawnedLane);
+        }
+
+        // Update the lane repeat counter.
+        if (selectedLane == lastSpawnedLane)
+        {
+            sameLaneSpawnCount++;
+        }
+        else
+        {
+            lastSpawnedLane = selectedLane;
+            sameLaneSpawnCount = 1;
+        }
+
+        return selectedLane;
     }
 
     #endregion
@@ -324,12 +370,12 @@ public class ObstacleSpawner : MonoBehaviour
             minimumSpawnRate
         );
 
-        // Display testing information in the Console.
-        Debug.Log(
-            "Difficulty Level: " + currentDifficultyLevel +
-            " | Obstacle Speed: " + obstacleMoveSpeed +
-            " | Spawn Rate: " + spawnRate
-        );
+        //// Display testing information in the Console.
+        //Debug.Log(
+        //    "Difficulty Level: " + currentDifficultyLevel +
+        //    " | Obstacle Speed: " + obstacleMoveSpeed +
+        //    " | Spawn Rate: " + spawnRate
+        //);
     }
 
     #endregion
