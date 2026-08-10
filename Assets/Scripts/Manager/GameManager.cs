@@ -179,8 +179,6 @@ public class GameManager : MonoBehaviour
 
         UpdateLivesUI();
 
-        Debug.Log("Lives Remaining: " + currentLives);
-
         if (currentLives <= 0)
         {
             GameOver();

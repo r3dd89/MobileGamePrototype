@@ -2,6 +2,7 @@ using System;
 using Unity.Services.Analytics;
 using Unity.Services.Core;
 using UnityEngine;
+using UnityEngine.UnityConsent;
 
 /*
  * Script Name: GameAnalyticsManager
@@ -18,14 +19,12 @@ public class GameAnalyticsManager : MonoBehaviour
 {
     #region Singleton
 
-    // Allows other scripts to access the analytics manager easily.
     public static GameAnalyticsManager Instance { get; private set; }
 
     #endregion
 
     #region Private Variables
 
-    // Prevents events from being sent before Unity Services is ready.
     private bool analyticsReady;
 
     #endregion
@@ -34,7 +33,6 @@ public class GameAnalyticsManager : MonoBehaviour
 
     private async void Awake()
     {
-        // Prevent duplicate analytics managers when changing scenes.
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -59,14 +57,20 @@ public class GameAnalyticsManager : MonoBehaviour
             await UnityServices.InitializeAsync();
 
             /*
-             * This starts Analytics data collection.
-             * For a released game, add a proper privacy and consent screen.
+             * Grant Analytics consent for this course prototype.
+             *
+             * For a public/commercial release, this should be connected
+             * to an actual user-facing privacy and consent choice.
              */
-            AnalyticsService.Instance.StartDataCollection();
+            EndUserConsent.SetConsentState(
+                new ConsentState
+                {
+                    AnalyticsIntent = ConsentStatus.Granted,
+                    AdsIntent = ConsentStatus.Denied
+                }
+            );
 
             analyticsReady = true;
-
-            Debug.Log("Unity Analytics initialized successfully.");
         }
         catch (Exception exception)
         {
@@ -109,20 +113,12 @@ public class GameAnalyticsManager : MonoBehaviour
 
     private void RecordEvent(string eventName)
     {
-        // Do not attempt to send an event before Analytics is ready.
         if (!analyticsReady)
         {
-            Debug.LogWarning(
-                "Analytics is not ready. Event skipped: " + eventName
-            );
-
             return;
         }
 
         AnalyticsService.Instance.RecordEvent(eventName);
-
-        // This message helps verify the event during testing.
-        Debug.Log("Analytics event recorded: " + eventName);
     }
 
     #endregion

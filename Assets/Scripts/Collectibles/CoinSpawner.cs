@@ -136,11 +136,6 @@ public class CoinSpawner : MonoBehaviour
 
             coinPool.Add(newCoin);
         }
-
-        Debug.Log(
-            "Coin pool created: " + coinPool.Count,
-            this
-        );
     }
 
     private GameObject GetAvailableCoin()
@@ -169,11 +164,6 @@ public class CoinSpawner : MonoBehaviour
 
         if (availableCoin == null)
         {
-            Debug.LogWarning(
-                "Coin Spawner: No pooled coin is available.",
-                this
-            );
-
             return;
         }
 
@@ -204,11 +194,6 @@ public class CoinSpawner : MonoBehaviour
 
             availableCoin.SetActive(true);
         }
-
-        Debug.Log(
-            "Coin spawned at: " + spawnPosition,
-            availableCoin
-        );
     }
 
     #endregion
@@ -245,11 +230,6 @@ public class CoinSpawner : MonoBehaviour
             ((currentDifficultyLevel - 1) *
              spawnRateDecreasePerLevel),
             minimumSpawnRate
-        );
-
-        Debug.Log(
-            "Coin Spawn Rate Updated: " +
-            currentSpawnRate
         );
     }
 
