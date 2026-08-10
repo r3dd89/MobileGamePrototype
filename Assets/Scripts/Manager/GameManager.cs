@@ -6,7 +6,8 @@ using UnityEngine.UI;
 /*
  * Script Name: GameManager
  * Purpose: Controls player lives, score, game over behavior,
- *          scene restarting, and returning to the main menu.
+ *          scene restarting, returning to the main menu,
+ *          and score pulse feedback.
  */
 
 public class GameManager : MonoBehaviour
@@ -40,6 +41,14 @@ public class GameManager : MonoBehaviour
     // Displays the score during gameplay.
     [SerializeField] private TMP_Text scoreText;
 
+    [Header("Score Pulse Settings")]
+
+    // Controls how large the score becomes during the pulse.
+    [SerializeField] private float scorePulseScale = 1.3f;
+
+    // Controls how quickly the score returns to its normal size.
+    [SerializeField] private float scorePulseSpeed = 8f;
+
     [Header("Game Over UI")]
 
     // Panel displayed when the player loses all lives.
@@ -65,6 +74,12 @@ public class GameManager : MonoBehaviour
 
     // Tracks whether the game has ended.
     private bool isGameOver;
+
+    // Stores the normal score text scale.
+    private Vector3 scoreNormalScale;
+
+    // Tracks whether the score is currently pulsing.
+    private bool isScorePulsing;
 
     #endregion
 
@@ -107,6 +122,13 @@ public class GameManager : MonoBehaviour
         currentLives = startingLives;
         currentScore = 0f;
         isGameOver = false;
+        isScorePulsing = false;
+
+        // Save the score text's normal scale.
+        if (scoreText != null)
+        {
+            scoreNormalScale = scoreText.transform.localScale;
+        }
 
         // Hide the Game Over panel at the beginning.
         if (gameOverPanel != null)
@@ -130,6 +152,12 @@ public class GameManager : MonoBehaviour
         currentScore += scorePerSecond * Time.deltaTime;
 
         UpdateScoreUI();
+
+        // Return the score to its normal size after a pulse.
+        if (isScorePulsing)
+        {
+            UpdateScorePulse();
+        }
     }
 
     #endregion
@@ -161,7 +189,7 @@ public class GameManager : MonoBehaviour
 
     /// <summary>
     /// Adds points to the player's score.
-    /// This can later be used for coin collection.
+    /// Used when collecting coins or other score bonuses.
     /// </summary>
     public void AddScore(int amount)
     {
@@ -170,8 +198,14 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // Add the bonus points.
         currentScore += amount;
+
+        // Update the number immediately.
         UpdateScoreUI();
+
+        // Play the score pulse feedback.
+        StartScorePulse();
     }
 
     /// <summary>
@@ -227,6 +261,52 @@ public class GameManager : MonoBehaviour
         if (scoreText != null)
         {
             scoreText.text = CurrentScore.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Makes the score temporarily grow after bonus points are added.
+    /// </summary>
+    private void StartScorePulse()
+    {
+        if (scoreText == null)
+        {
+            return;
+        }
+
+        // Make the score larger immediately.
+        scoreText.transform.localScale =
+            scoreNormalScale * scorePulseScale;
+
+        isScorePulsing = true;
+    }
+
+    /// <summary>
+    /// Smoothly returns the score back to its normal size.
+    /// </summary>
+    private void UpdateScorePulse()
+    {
+        if (scoreText == null)
+        {
+            isScorePulsing = false;
+            return;
+        }
+
+        // Move the score scale back toward normal.
+        scoreText.transform.localScale = Vector3.Lerp(
+            scoreText.transform.localScale,
+            scoreNormalScale,
+            scorePulseSpeed * Time.deltaTime
+        );
+
+        // Stop updating once the score is almost normal size.
+        if (Vector3.Distance(
+            scoreText.transform.localScale,
+            scoreNormalScale
+        ) < 0.01f)
+        {
+            scoreText.transform.localScale = scoreNormalScale;
+            isScorePulsing = false;
         }
     }
 
