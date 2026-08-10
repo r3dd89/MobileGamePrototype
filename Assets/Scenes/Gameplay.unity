@@ -2935,8 +2935,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CoinSpawner
   coinPrefab: {fileID: 3815723541211510790, guid: a65aedaaaef6b594ea586c999dc75cf7, type: 3}
   poolSize: 8
-  spawnRate: 3
+  startingSpawnRate: 3
   spawnY: 3.5
+  spawnRateDecreasePerLevel: 0.2
+  minimumSpawnRate: 2
 --- !u!4 &925196612
 Transform:
   m_ObjectHideFlags: 0
@@ -4262,6 +4264,12 @@ MonoBehaviour:
   spawnY: 5.5
   obstacleMoveSpeed: 3.5
   returnToPoolY: -6
+  difficultyIncreaseInterval: 20
+  speedIncreasePerLevel: 0.5
+  spawnRateDecreasePerLevel: 0.1
+  minimumSpawnRate: 1.1
+  maximumObstacleSpeed: 5.5
+  maximumDifficultyLevel: 5
 --- !u!4 &1666778280
 Transform:
   m_ObjectHideFlags: 0
@@ -5411,6 +5419,8 @@ MonoBehaviour:
   - {fileID: 206977606}
   scorePerSecond: 10
   scoreText: {fileID: 883952945}
+  scorePulseScale: 1.3
+  scorePulseSpeed: 8
   gameOverPanel: {fileID: 1668259964}
   finalScoreText: {fileID: 229626988}
   mainMenuSceneName: Main Menu
