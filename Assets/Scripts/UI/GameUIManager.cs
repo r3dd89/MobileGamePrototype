@@ -4,8 +4,8 @@ using UnityEngine;
 
 /*
  * Script Name: GameUIManager
- * Purpose: Handles gameplay instructions, the starting countdown,
- *          and temporary status messages for the mobile runner.
+ * Purpose: Handles starting instructions, countdown,
+ *          and temporary gameplay status messages.
  */
 
 public class GameUIManager : MonoBehaviour
@@ -14,35 +14,33 @@ public class GameUIManager : MonoBehaviour
 
     [Header("UI Text References")]
 
-    // Displays the controls and starting directions.
+    // Shows the controls when the game begins.
     [SerializeField] private TMP_Text instructionText;
 
-    // Displays countdown numbers and temporary gameplay messages.
+    // Shows countdown numbers and temporary gameplay messages.
     [SerializeField] private TMP_Text statusText;
 
-    [Header("Starting Instructions")]
+    [Header("Starting Sequence")]
 
-    // Amount of time the player can read the controls before countdown begins.
-    [SerializeField] private float instructionDisplayTime = 2f;
+    // How long instructions remain visible.
+    [SerializeField] private float instructionDisplayTime = 2.5f;
 
-    [Header("Countdown Settings")]
-
-    // Amount of time each countdown number remains visible.
+    // How long each countdown number remains visible.
     [SerializeField] private float countdownStepTime = 0.8f;
 
-    // Amount of time GO remains visible.
+    // How long GO remains visible.
     [SerializeField] private float goDisplayTime = 0.6f;
 
     [Header("Status Message Settings")]
 
-    // Amount of time normal gameplay messages remain visible.
+    // How long normal gameplay messages remain visible.
     [SerializeField] private float statusClearDelay = 1.5f;
 
     #endregion
 
     #region Private Variables
 
-    // Tracks whether the starting sequence has finished.
+    // Prevents normal status messages during the intro sequence.
     private bool startupComplete;
 
     #endregion
@@ -51,10 +49,9 @@ public class GameUIManager : MonoBehaviour
 
     private void Start()
     {
-        // Begin the game paused so nothing moves before the countdown.
+        // Pause gameplay while instructions and countdown are shown.
         Time.timeScale = 0f;
 
-        // Start the directions and countdown sequence.
         StartCoroutine(StartGameSequence());
     }
 
@@ -66,7 +63,7 @@ public class GameUIManager : MonoBehaviour
     {
         startupComplete = false;
 
-        // Show the controls first.
+        // Show only the instructions first.
         if (instructionText != null)
         {
             instructionText.gameObject.SetActive(true);
@@ -74,56 +71,54 @@ public class GameUIManager : MonoBehaviour
             instructionText.text =
                 "Swipe Left / Right to Change Lanes\n" +
                 "Swipe Up to Jump\n" +
-                "Collect Coins and Avoid Obstacles!";
+                "Collect Coins and Avoid Obstacles";
         }
 
-        // Clear the status area while instructions are shown.
+        // Hide countdown text while instructions are visible.
         if (statusText != null)
         {
-            statusText.text = "";
+            statusText.gameObject.SetActive(false);
         }
 
-        /*
-         * WaitForSecondsRealtime is used because normal game time
-         * is currently paused.
-         */
         yield return new WaitForSecondsRealtime(
             instructionDisplayTime
         );
 
-        // Hide the directions before the countdown.
+        // Hide instructions completely.
         if (instructionText != null)
         {
             instructionText.gameObject.SetActive(false);
         }
 
-        // Show 3.
+        // Show countdown text.
+        if (statusText != null)
+        {
+            statusText.gameObject.SetActive(true);
+        }
+
         SetStatusText("3");
 
         yield return new WaitForSecondsRealtime(
             countdownStepTime
         );
 
-        // Show 2.
         SetStatusText("2");
 
         yield return new WaitForSecondsRealtime(
             countdownStepTime
         );
 
-        // Show 1.
         SetStatusText("1");
 
         yield return new WaitForSecondsRealtime(
             countdownStepTime
         );
 
+        SetStatusText("GO!");
+
         // Start gameplay.
         Time.timeScale = 1f;
         startupComplete = true;
-
-        // Show GO briefly as gameplay begins.
-        SetStatusText("GO!");
 
         yield return new WaitForSecondsRealtime(
             goDisplayTime
@@ -138,10 +133,7 @@ public class GameUIManager : MonoBehaviour
 
     public void ShowStatusMessage(string message)
     {
-        /*
-         * Ignore normal gameplay messages until the
-         * starting sequence has finished.
-         */
+        // Ignore gameplay messages during the intro.
         if (!startupComplete)
         {
             return;
@@ -152,13 +144,13 @@ public class GameUIManager : MonoBehaviour
             return;
         }
 
-        // Cancel the previous clear timer.
+        // Make sure status text is visible.
+        statusText.gameObject.SetActive(true);
+
         CancelInvoke(nameof(ClearStatusMessage));
 
-        // Display the new message.
         statusText.text = message;
 
-        // Clear the message after a short delay.
         Invoke(
             nameof(ClearStatusMessage),
             statusClearDelay

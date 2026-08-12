@@ -5,7 +5,7 @@ using UnityEngine.InputSystem.EnhancedTouch;
 /*
  * Script Name: PlayerController
  * Purpose: Controls swipe movement, jumping, accelerometer feedback,
- *          player damage, analytics, and visual feedback.
+ *          player damage, analytics, sound effects, and visual feedback.
  *
  * Optimizations:
  * 1. Caches frequently used component references.
@@ -43,11 +43,6 @@ public class PlayerController : MonoBehaviour
 
     // Controls how much the player rotates from device tilt.
     [SerializeField] private float tiltVisualAmount = 20f;
-
-    [Header("UI Feedback")]
-
-    // Reference used to display temporary gameplay messages.
-    [SerializeField] private GameUIManager gameUIManager;
 
     [Header("Visual Feedback")]
 
@@ -141,8 +136,6 @@ public class PlayerController : MonoBehaviour
         {
             originalColor = spriteRenderer.color;
         }
-
-        ShowStatus("Ready");
     }
 
     private void Update()
@@ -199,7 +192,6 @@ public class PlayerController : MonoBehaviour
         // Treat obstacles as avoided while jumping.
         if (isJumping)
         {
-            ShowStatus("Jumped Over Obstacle");
             return;
         }
 
@@ -209,12 +201,13 @@ public class PlayerController : MonoBehaviour
             GameManager.Instance.LoseLife();
         }
 
+        // Play the hit sound effect.
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayHitSound();
         }
 
-        ShowStatus("Hit Obstacle");
+        // Flash the player after being hit.
         FlashPlayer();
 
         // Start temporary invincibility.
@@ -279,11 +272,10 @@ public class PlayerController : MonoBehaviour
         float minimumSwipeDistanceSquared =
             minimumSwipeDistance * minimumSwipeDistance;
 
-        // Treat short gestures as taps.
+        // Ignore gestures that are too short to count as a swipe.
         if (swipeDirection.sqrMagnitude <
             minimumSwipeDistanceSquared)
         {
-            ShowStatus("Tap");
             return;
         }
 
@@ -303,13 +295,10 @@ public class PlayerController : MonoBehaviour
         // Vertical swipe.
         else
         {
+            // Only upward swipes trigger a jump.
             if (swipeDirection.y > 0f)
             {
                 Jump();
-            }
-            else
-            {
-                ShowStatus("Swipe Down");
             }
         }
     }
@@ -323,7 +312,6 @@ public class PlayerController : MonoBehaviour
         // Stop at the left edge.
         if (currentLane <= 0)
         {
-            ShowStatus("Left Edge");
             return;
         }
 
@@ -335,7 +323,6 @@ public class PlayerController : MonoBehaviour
             GameAnalyticsManager.Instance.TrackLaneChanged();
         }
 
-        ShowStatus("Swipe Left");
         FlashPlayer();
     }
 
@@ -344,7 +331,6 @@ public class PlayerController : MonoBehaviour
         // Stop at the right edge.
         if (currentLane >= lanePositions.Length - 1)
         {
-            ShowStatus("Right Edge");
             return;
         }
 
@@ -356,7 +342,6 @@ public class PlayerController : MonoBehaviour
             GameAnalyticsManager.Instance.TrackLaneChanged();
         }
 
-        ShowStatus("Swipe Right");
         FlashPlayer();
     }
 
@@ -402,7 +387,6 @@ public class PlayerController : MonoBehaviour
             GameAnalyticsManager.Instance.TrackPlayerJumped();
         }
 
-        ShowStatus("Jump");
         FlashPlayer();
     }
 
@@ -457,14 +441,6 @@ public class PlayerController : MonoBehaviour
     #endregion
 
     #region Feedback Methods
-
-    private void ShowStatus(string message)
-    {
-        if (gameUIManager != null)
-        {
-            gameUIManager.ShowStatusMessage(message);
-        }
-    }
 
     private void FlashPlayer()
     {
